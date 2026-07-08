@@ -3,10 +3,12 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 public class UserDaoJDBCImpl implements UserDao {
     public UserDaoJDBCImpl() {
@@ -29,7 +31,6 @@ public class UserDaoJDBCImpl implements UserDao {
     public void saveUser(String name, String lastName, byte age) {
         String sql = "INSERT INTO users (name, last_name, age) VALUES (?, ?, ?)";
         executeSql(sql, "Не удалось добавить пользователя", name, lastName, age);
-        System.out.printf("User с именем — %s добавлен в базу данных\n", name);
     }
 
     public void removeUserById(long id) {
@@ -39,10 +40,10 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public List<User> getAllUsers() {
         String sql = "SELECT * FROM users";
-        List<User> users  = new ArrayList<>();
+        List<User> users = new ArrayList<>();
 
         try (Connection connection = Util.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
@@ -56,8 +57,7 @@ public class UserDaoJDBCImpl implements UserDao {
                     users.add(user);
                 }
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException("Не получилось получить таблицу всех user'ов", e);
         }
         return users;
@@ -68,15 +68,14 @@ public class UserDaoJDBCImpl implements UserDao {
         executeSql(sql, "Не удалось удалить всех пользователей");
     }
 
-    private void executeSql (String sql, String errorMessage, Object... params) {
+    private void executeSql(String sql, String errorMessage, Object... params) {
         try (Connection connection = Util.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 statement.setObject(i + 1, params[i]);
             }
             statement.executeUpdate();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException(errorMessage, e);
         }
     }
